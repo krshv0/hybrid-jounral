@@ -1,0 +1,24 @@
+# Requirements for Journal Image-to-Markdown Converter
+
+# Core dependencies
+langchain==0.0.354
+opencv-python==4.8.1.78
+Pillow==10.1.0
+numpy==1.24.3
+
+# Optional: For API communication
+requests==2.31.0
+
+# Optional: For async operations
+python-dotenv==1.0.0
+
+# Note: LLM Model Required
+# This script requires Ollama to be installed and running locally
+# Download from: https://ollama.ai
+# 
+# Required models:
+# - ollama pull llava  (for multimodal vision)
+# - ollama pull mistral  (for text refinement)
+#
+# Start Ollama service:
+# ollama serve
