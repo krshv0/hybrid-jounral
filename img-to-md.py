@@ -30,7 +30,7 @@ class Config:
     """Application configuration"""
     
     # Paths
-    VAULT_DIR = Path("./journal_vault")
+    VAULT_DIR = Path("/Users/krishiv/Downloads/Stuff/journal_vault")
     ATTACHMENTS_DIR = VAULT_DIR / "attachments"
     PROCESSED_DIR = VAULT_DIR / "entries"
     
@@ -173,7 +173,7 @@ class MultimodalExtractor:
 YOUR TASK:
 1. TRANSCRIBE all handwritten text as accurately as possible.
    - Preserve the writer's exact words, spelling, punctuation and line breaks.
-   - Only correct an obvious slip (e.g. a duplicated word) where the intended meaning is unambiguous — note any such correction in page_notes.
+   - Only correct an obvious slip (e.g. a duplicated word) where the intended meaning is unambiguous.
    - Do NOT paraphrase, summarise or rewrite anything.
 2. You MAY use context to:
    - Resolve ambiguous handwriting (pick the most contextually plausible word).
@@ -181,13 +181,14 @@ YOUR TASK:
    - Add light markdown formatting (blank lines between paragraphs, `- ` for bullet lists) to aid readability, but only where the original layout clearly implies it.
 3. Generate 3–6 concise, lowercase tags that reflect the main themes, emotions or topics of the entry.
 4. Generate a short title (2–4 words) that captures the essence of the entry. This will be used as the file name — make it specific, not generic.
+5. Write a 3–5 sentence AI summary of the entry's key ideas and emotional tone. This is a synthesis, not a transcription — write it in third person.
 
 RESPOND ONLY WITH VALID JSON IN THIS EXACT FORMAT (no markdown fences):
 {
     "text": "full transcription here",
+    "summary": "3-5 sentence synthesis of the entry here",
     "tags": ["tag1", "tag2", "tag3"],
-    "title": "Short Specific Title",
-    "page_notes": "any corrections or observations, or empty string"
+    "title": "Short Specific Title"
 }"""
         
         # Build content list: all images first, then the instruction
@@ -213,9 +214,9 @@ RESPOND ONLY WITH VALID JSON IN THIS EXACT FORMAT (no markdown fences):
         except json.JSONDecodeError:
             extracted_data = {
                 "text": raw,
+                "summary": "",
                 "tags": ["journal"],
                 "title": "Untitled Entry",
-                "page_notes": ""
             }
 
         return extracted_data
@@ -247,9 +248,9 @@ class MarkdownBuilder:
         """
 
         text = extracted_data.get('text', '')
+        summary = extracted_data.get('summary', '')
         tags = extracted_data.get('tags', ['journal'])
         title = extracted_data.get('title', 'Untitled Entry')
-        page_notes = extracted_data.get('page_notes', '')
 
         # Wrap transcribed text as blockquote
         blockquote = "\n".join(
@@ -260,7 +261,8 @@ class MarkdownBuilder:
         frontmatter = self._build_frontmatter(page_id, title, tags, source_filenames)
         tags_line = " ".join(f"#{t.replace(' ', '-')}" for t in tags)
         images_section = self._build_images_section(source_filenames)
-        metadata_section = self._build_metadata_section(text, page_notes)
+        metadata_section = self._build_metadata_section(text)
+        summary_section = f"## 🧠 AI Summary\n\n{summary}\n" if summary else ""
 
         markdown = f"""{frontmatter}
 
@@ -268,6 +270,9 @@ class MarkdownBuilder:
 
 {tags_line}
 
+---
+
+{summary_section}
 ---
 
 {images_section}
@@ -303,16 +308,13 @@ source_pages: [{sources}]
         return "\n".join(f"![[{filename}]]" for filename in source_filenames)
 
     @staticmethod
-    def _build_metadata_section(text: str, page_notes: str) -> str:
+    def _build_metadata_section(text: str) -> str:
         """Build metadata section"""
         word_count = len(text.split())
-        section = f"""## Metadata
+        return f"""## Metadata
 
 - **Word Count:** {word_count}
 - **Processing Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"""
-        if page_notes:
-            section += f"\n- **Notes:** {page_notes}"
-        return section
 
 
 # ============================================================================

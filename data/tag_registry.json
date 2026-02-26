@@ -1,0 +1,196 @@
+{
+  "tags": {
+    "api-keys": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/API Keys.md"
+      ]
+    },
+    "deepseek": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/API Keys.md"
+      ]
+    },
+    "gemini": {
+      "count": 4,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/API Keys.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/21st Feb - Day 1.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/23rd Feb - Day 3.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/22nd Feb - Day 2.md"
+      ]
+    },
+    "ocr": {
+      "count": 3,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/hybrid_journal_architecture.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/21st Feb - Day 1.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/22nd Feb - Day 2.md"
+      ]
+    },
+    "hybrid-journal": {
+      "count": 3,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/hybrid_journal_architecture.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/hybrid_journal_diagrams.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/22nd Feb - Day 2.md"
+      ]
+    },
+    "system-architecture": {
+      "count": 6,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/hybrid_journal_architecture.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/hybrid_journal_diagrams.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Fixed State Machine.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/23rd Feb - Day 3.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/24th Feb - Day 4.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/26th Feb - Day 6.md"
+      ]
+    },
+    "finite-state-machine": {
+      "count": 3,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Fixed State Machine.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/26th Feb - Day 6.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/25th Feb - Day 5.md"
+      ]
+    },
+    "rag-pkb-system": {
+      "count": 5,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Fixed State Machine.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/23rd Feb - Day 3.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/24th Feb - Day 4.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/22nd Feb - Day 2.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/25th Feb - Day 5.md"
+      ]
+    },
+    "llm-integration": {
+      "count": 6,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/23rd Feb - Day 3.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/24th Feb - Day 4.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/22nd Feb - Day 2.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/25th Feb - Day 5.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/21st Feb - Day 1.md",
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/hybrid_journal_diagrams.md"
+      ]
+    },
+    "git-sync": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/26th Feb - Day 6.md"
+      ]
+    },
+    "mindfulness": {
+      "count": 2,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB22 - Thoughts to Reality.md",
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB19 - Self-Worth Reflection.md"
+      ]
+    },
+    "action": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB22 - Thoughts to Reality.md"
+      ]
+    },
+    "creativity": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB22 - Thoughts to Reality.md"
+      ]
+    },
+    "resilience": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB22 - Shawshank Redemption Reflection.md"
+      ]
+    },
+    "andy-dufresne": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB22 - Shawshank Redemption Reflection.md"
+      ]
+    },
+    "movie-reflection": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB22 - Shawshank Redemption Reflection.md"
+      ]
+    },
+    "morgan-freeman": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB22 - Shawshank Redemption Reflection.md"
+      ]
+    },
+    "hope": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB22 - Shawshank Redemption Reflection.md"
+      ]
+    },
+    "shreyaan": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ]
+    },
+    "nishant": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ]
+    },
+    "dream-journal": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ]
+    },
+    "klpd": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ]
+    },
+    "social-anxiety": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ]
+    },
+    "taha": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ]
+    },
+    "monty": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ]
+    },
+    "personal-growth": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB19 - Self-Worth Reflection.md"
+      ]
+    },
+    "self-worth": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB19 - Self-Worth Reflection.md"
+      ]
+    },
+    "mac": {
+      "count": 1,
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/26th Feb - Day 6.md"
+      ]
+    }
+  }
+}

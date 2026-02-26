@@ -1,24 +1,39 @@
-# Requirements for Journal Image-to-Markdown Converter
-
-# Core dependencies
-langchain==0.0.354
-opencv-python==4.8.1.78
-Pillow==10.1.0
-numpy==1.24.3
-
-# Optional: For API communication
-requests==2.31.0
-
-# Optional: For async operations
-python-dotenv==1.0.0
-
-# Note: LLM Model Required
-# This script requires Ollama to be installed and running locally
-# Download from: https://ollama.ai
-# 
-# Required models:
-# - ollama pull llava  (for multimodal vision)
-# - ollama pull mistral  (for text refinement)
+# ─── Hybrid Journal System — Full Requirements ────────────────────────────────
 #
-# Start Ollama service:
-# ollama serve
+# Existing pipeline (img-to-md.py)
+# ─────────────────────────────────
+langchain>=0.2.0
+langchain-core>=0.2.0
+langchain-google-genai>=1.0.0      # Gemini vision + text (existing pipeline)
+opencv-python>=4.8.0
+Pillow>=10.0.0
+numpy>=1.24.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# ─── RAG Knowledge Base Engine (rag_engine/) ──────────────────────────────────
+
+# Embeddings — BGE-Large (local, free, open-source)
+transformers>=4.40.0
+torch>=2.1.0                        # CPU by default; install torch+cuda for GPU
+huggingface-hub>=0.22.0
+tokenizers>=0.19.0
+sentencepiece>=0.1.99               # required by some tokenisers
+
+# Vector store — ChromaDB (local persistent)
+chromadb>=0.5.0
+
+# Filesystem watcher
+watchdog>=4.0.0
+
+# LLM providers (install only what you use)
+# langchain-google-genai is already listed above for Gemini
+# langchain-openai>=0.1.0           # OpenAI  (uncomment if needed)
+# langchain-anthropic>=0.1.0        # Claude  (uncomment if needed)
+# langchain-ollama>=0.1.0           # Ollama  (uncomment if needed)
+
+# Utilities
+tqdm>=4.66.0                        # progress bars during reindex
+
+# Observability
+langsmith>=0.7.0                    # LangSmith tracing (set LANGCHAIN_TRACING_V2=true in .env)

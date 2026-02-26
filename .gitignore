@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# RAG engine data (large, local-only)
+data/chroma_db/
+data/mutation_log.jsonl
+data/rag_engine.log*
+
+# Keep registries in version control (optional — remove if private)
+# data/tag_registry.json
+# data/entity_registry.json
+
+# HuggingFace model cache
+.cache/
+
+# macOS
+.DS_Store

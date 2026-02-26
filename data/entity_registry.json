@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "Morgan Freeman": {
+      "type": "PERSON",
+      "aliases": [],
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB22 - Shawshank Redemption Reflection.md"
+      ],
+      "create_note": false
+    },
+    "Andy Dufresne": {
+      "type": "PERSON",
+      "aliases": [],
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB22 - Shawshank Redemption Reflection.md"
+      ],
+      "create_note": false
+    },
+    "Shreyaan": {
+      "type": "PERSON",
+      "aliases": [],
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ],
+      "create_note": false
+    },
+    "Taha": {
+      "type": "PERSON",
+      "aliases": [],
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ],
+      "create_note": false
+    },
+    "Nishant": {
+      "type": "PERSON",
+      "aliases": [],
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ],
+      "create_note": false
+    },
+    "Monty": {
+      "type": "PERSON",
+      "aliases": [],
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/journal_vault/entries/FEB24 - KLPD Dream Entries.md"
+      ],
+      "create_note": false
+    },
+    "Mac": {
+      "type": "PERSON",
+      "aliases": [],
+      "documents": [
+        "/Users/krishiv/Downloads/Stuff/Projects/Hybrid Journal/Development/26th Feb - Day 6.md"
+      ],
+      "create_note": false
+    }
+  }
+}
