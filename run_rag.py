@@ -14,6 +14,7 @@ import sys
 import argparse
 import logging
 import time
+import threading
 from pathlib import Path
 
 from rag_engine.logger import setup_logging
@@ -53,17 +54,18 @@ def _bootstrap_vault(store) -> None:
 
 # ── Commands ──────────────────────────────────────────────────────────────────
 
-def cmd_watch(args) -> None:
-    from rag_engine.fsm_store import FSMStore
+# ── Vault supervisor ─────────────────────────────────────────────────────────
+
+_VAULT_POLL_INTERVAL = 5.0   # seconds between vault-availability checks
+
+
+def _start_watcher_session(orch, store):
+    """
+    Build and start a fresh watcher session (watcher + both schedulers).
+    Returns (watcher, idx_sched, rsn_sched).
+    """
     from rag_engine.indexing_scheduler import IndexingScheduler
     from rag_engine.reasoning_scheduler import ReasoningScheduler
-
-    RAGConfig.require_vault()
-    orch  = RAGOrchestrator()
-    store = FSMStore()
-
-    print("Bootstrapping vault…")
-    _bootstrap_vault(store)
 
     idx_sched = IndexingScheduler(
         fsm_store=store,
@@ -76,7 +78,6 @@ def cmd_watch(args) -> None:
         fsm_store=store,
         orchestrator=orch,
     )
-
     watcher = VaultWatcher(
         fsm_store=store,
         orchestrator=orch,
@@ -85,16 +86,99 @@ def cmd_watch(args) -> None:
     )
     watcher.start()
     orch.set_watcher_handler(watcher._handler)
+    return watcher, idx_sched, rsn_sched
+
+
+def _stop_watcher_session(watcher, idx_sched, rsn_sched) -> None:
+    """Stop a running watcher session cleanly."""
+    log = logging.getLogger("vault.supervisor")
+    try:
+        idx_sched.stop()
+    except Exception as exc:
+        log.debug("idx_sched.stop: %s", exc)
+    try:
+        rsn_sched.stop()
+    except Exception as exc:
+        log.debug("rsn_sched.stop: %s", exc)
+    try:
+        watcher.stop()
+    except Exception as exc:
+        log.debug("watcher.stop: %s", exc)
+
+
+def cmd_watch(args) -> None:
+    """
+    Resilient vault supervisor.
+
+    Lifecycle:
+        vault locked on start  → wait silently, poll every 5 s
+        vault unlocks          → bootstrap + start watcher/schedulers
+        vault locks mid-run    → stop watcher/schedulers, resume polling
+        vault unlocks again    → bootstrap + restart watcher/schedulers
+        Ctrl-C at any point    → clean shutdown
+    """
+    from rag_engine.fsm_store import FSMStore
+
+    log = logging.getLogger("vault.supervisor")
+
+    # Long-lived components — survive lock/unlock cycles.
+    # RAGOrchestrator is kept alive to avoid reloading the embedding model
+    # on every unlock (model load can take ~10 s).
+    orch  = RAGOrchestrator()
+    store = FSMStore()
+
+    watcher   = None
+    idx_sched = None
+    rsn_sched = None
+    vault_was_open = False
+
     print(
-        f"✓ FSM watcher running.\n"
-        f"  Vault             : {RAGConfig.VAULT_DIR}\n"
-        f"  Stabilisation     : {RAGConfig.STABILIZATION_WINDOW}s\n"
-        f"  Indexing interval : {RAGConfig.INDEXING_INTERVAL}s\n"
-        f"  Reasoning interval: {RAGConfig.REASONING_INTERVAL}s  "
-        f"(cooldown {RAGConfig.REASONING_COOLDOWN}s)\n"
-        f"Press Ctrl-C to stop."
+        f"\n✓ Vault supervisor started."
+        f"\n  Vault : {RAGConfig.VAULT_DIR}"
+        f"\n  Polling every {_VAULT_POLL_INTERVAL:.0f} s for vault availability."
+        f"\n  Press Ctrl-C to stop.\n"
     )
-    watcher.join()
+
+    if not RAGConfig.is_vault_available():
+        print("🔒 Vault is currently locked — waiting for it to be unlocked…")
+
+    try:
+        while True:
+            vault_open = RAGConfig.is_vault_available()
+
+            if vault_open and not vault_was_open:
+                # ── Vault just unlocked ──────────────────────────────────
+                log.info("Vault mounted — starting watcher session.")
+                print("\n🔓 Vault unlocked — bootstrapping and starting watcher…")
+                _bootstrap_vault(store)
+                watcher, idx_sched, rsn_sched = _start_watcher_session(orch, store)
+                print(
+                    f"✓ Watcher active."
+                    f"\n  Stabilisation     : {RAGConfig.STABILIZATION_WINDOW}s"
+                    f"\n  Indexing interval : {RAGConfig.INDEXING_INTERVAL}s"
+                    f"\n  Reasoning interval: {RAGConfig.REASONING_INTERVAL}s"
+                    f"  (cooldown {RAGConfig.REASONING_COOLDOWN}s)"
+                )
+                vault_was_open = True
+
+            elif not vault_open and vault_was_open:
+                # ── Vault just locked ────────────────────────────────────
+                log.warning("Vault unmounted — stopping watcher session.")
+                print(
+                    "\n🔒 Vault locked — pausing watcher."
+                    "\n   Waiting for vault to be unlocked…"
+                )
+                _stop_watcher_session(watcher, idx_sched, rsn_sched)
+                watcher = idx_sched = rsn_sched = None
+                vault_was_open = False
+
+            time.sleep(_VAULT_POLL_INTERVAL)
+
+    except KeyboardInterrupt:
+        print("\nCtrl-C received — shutting down…")
+        if watcher is not None:
+            _stop_watcher_session(watcher, idx_sched, rsn_sched)
+        print("✓ Shutdown complete.")
 
 
 def cmd_reindex(args) -> None:
