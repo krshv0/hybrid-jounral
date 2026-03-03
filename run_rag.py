@@ -58,6 +58,7 @@ def cmd_watch(args) -> None:
     from rag_engine.indexing_scheduler import IndexingScheduler
     from rag_engine.reasoning_scheduler import ReasoningScheduler
 
+    RAGConfig.require_vault()
     orch  = RAGOrchestrator()
     store = FSMStore()
 
@@ -97,12 +98,14 @@ def cmd_watch(args) -> None:
 
 
 def cmd_reindex(args) -> None:
+    RAGConfig.require_vault()
     orch = RAGOrchestrator()
     orch.reindex_vault()
     print("✓ Reindex complete.")
 
 
 def cmd_embed(args) -> None:
+    RAGConfig.require_vault()
     orch = RAGOrchestrator()
     orch.embed_vault()
     print("✓ Embed-only index complete.")

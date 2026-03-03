@@ -13,7 +13,7 @@ load_dotenv()
 class RAGConfig:
     # ── Paths ──────────────────────────────────────────────────────────────
     BASE_DIR         = Path(__file__).parent.parent
-    VAULT_DIR        = Path("/Users/krishiv/Downloads/Stuff")
+    VAULT_DIR        = Path("/Volumes/Vault/Encrypted Vault")
     DATA_DIR         = BASE_DIR / "data"          # index stays in project folder
 
     # Directories inside VAULT_DIR that should never be indexed
@@ -120,3 +120,18 @@ class RAGConfig:
         """Create all required directories."""
         for d in [cls.DATA_DIR, cls.CHROMA_DIR]:
             d.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
+    def is_vault_available(cls) -> bool:
+        """Returns True only when the Cryptomator vault is unlocked and mounted."""
+        return cls.VAULT_DIR.exists() and cls.VAULT_DIR.is_dir()
+
+    @classmethod
+    def require_vault(cls) -> None:
+        """Raise a clear RuntimeError if the vault is locked or not mounted."""
+        if not cls.is_vault_available():
+            raise RuntimeError(
+                f"\n🔒  Vault is locked or not mounted."
+                f"\n    Unlock it in Cryptomator first, then retry."
+                f"\n    Expected path: {cls.VAULT_DIR}"
+            )
