@@ -115,6 +115,16 @@ class RAGConfig:
     # Used when exact token counts are unavailable before calling the LLM.
     TOKEN_COST_PER_DOC    = 3_000
 
+    # ── Content significance gates ─────────────────────────────────────────
+    # difflib.SequenceMatcher ratio above which a body change is considered
+    # minor (i.e. NOT worth re-embedding or re-reasoning).
+    # 0.92 = up to ~8 % of characters changed is "minor".
+    CONTENT_SIGNIFICANCE_RATIO      = 0.92
+
+    # Word-count delta below which a body change is considered minor.
+    # Both thresholds must pass for a change to be skipped.
+    CONTENT_SIGNIFICANCE_MIN_WORD_DELTA = 25
+
     @classmethod
     def setup_dirs(cls):
         """Create all required directories."""

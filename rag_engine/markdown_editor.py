@@ -127,6 +127,35 @@ class MarkdownEditor:
                 return line[len(key) + 1:].strip()
         return None
 
+    def read_frontmatter_list(self, key: str) -> List[str]:
+        """
+        Return the value of a YAML list frontmatter key as a Python list.
+        Handles both inline `key: [a, b]` and block `key:\n  - a` forms.
+        Returns an empty list if the key is absent or unparseable.
+        """
+        raw = self.read_frontmatter_field(key)
+        if not raw:
+            return []
+        # Inline list: [a, b, c]
+        if raw.startswith("["):
+            inner = raw.strip("[]").strip()
+            if not inner:
+                return []
+            return [item.strip().strip('"\"') for item in inner.split(",") if item.strip()]
+        # Scalar (single value)
+        return [raw.strip().strip('"\"')] if raw.strip() else []
+
+    def read_existing_backlink_titles(self) -> List[str]:
+        """
+        Return the list of note titles already linked in the ## Related Notes section.
+        Extracts all [[Title]] patterns from that section only.
+        """
+        m = _BACKLINKS_SECTION_RE.search(self._text)
+        if not m:
+            return []
+        body = m.group(2)
+        return re.findall(r"\[\[([^\]]+)\]\]", body)
+
     # ── Internal helpers ─────────────────────────────────────────────────
 
     def _build_backlink_lines(self, decisions: List[BacklinkDecision]) -> List[str]:

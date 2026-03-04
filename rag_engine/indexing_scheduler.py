@@ -171,6 +171,22 @@ class IndexingScheduler:
             self._store.mark_reasoned_unchanged(file_path)
             return
 
+        # Rule 11 — body-content significance gate.
+        # The full-file hash changed, but that can happen when reasoning writes
+        # back tags or backlinks to the frontmatter.  Strip frontmatter and the
+        # ## Related Notes section and compare only the real body content.
+        # If the body hash is unchanged since the last reasoning pass, the only
+        # things that changed were system-written sections — skip re-processing.
+        if rec.last_reasoned_body_hash is not None:
+            current_body_hash = self._store.compute_body_hash(file_path)
+            if current_body_hash is not None and current_body_hash == rec.last_reasoned_body_hash:
+                logger.info(
+                    "Body hash unchanged since last reasoning — restoring REASONED directly  (%s)",
+                    path.name,
+                )
+                self._store.mark_reasoned_unchanged(file_path)
+                return
+
         # Rule 6 — hash unchanged since last INDEX but differs from last reasoning
         # baseline (or document was never indexed): skip re-embedding but still
         # advance to INDEXED so reasoning can run.

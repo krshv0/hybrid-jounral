@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 import sqlite3
 import threading
 import time
@@ -98,6 +99,12 @@ def _run_migrations(conn: sqlite3.Connection) -> None:
         )
         conn.commit()
         logger.info("Migration: added last_reasoned_hash column.")
+    if "last_reasoned_body_hash" not in existing:
+        conn.execute(
+            "ALTER TABLE document_states ADD COLUMN last_reasoned_body_hash TEXT"
+        )
+        conn.commit()
+        logger.info("Migration: added last_reasoned_body_hash column.")
 
 
 # ---------------------------------------------------------------------------
@@ -107,15 +114,16 @@ def _run_migrations(conn: sqlite3.Connection) -> None:
 @dataclass
 class FSMRecord:
     """In-memory representation of one document_states row."""
-    file_path:          str
-    current_state:      DocState
-    last_edit_time:     Optional[float] = None
-    last_index_time:    Optional[float] = None
-    last_reason_time:   Optional[float] = None
-    content_hash:       Optional[str]   = None
-    embedding_version:  Optional[str]   = None
-    reasoning_version:  Optional[str]   = None
-    last_reasoned_hash: Optional[str]   = None
+    file_path:               str
+    current_state:           DocState
+    last_edit_time:          Optional[float] = None
+    last_index_time:         Optional[float] = None
+    last_reason_time:        Optional[float] = None
+    content_hash:            Optional[str]   = None
+    embedding_version:       Optional[str]   = None
+    reasoning_version:       Optional[str]   = None
+    last_reasoned_hash:      Optional[str]   = None
+    last_reasoned_body_hash: Optional[str]   = None
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> "FSMRecord":
@@ -130,6 +138,7 @@ class FSMRecord:
             embedding_version=row["embedding_version"],
             reasoning_version=row["reasoning_version"],
             last_reasoned_hash=row["last_reasoned_hash"] if "last_reasoned_hash" in keys else None,
+            last_reasoned_body_hash=row["last_reasoned_body_hash"] if "last_reasoned_body_hash" in keys else None,
         )
 
 
@@ -405,14 +414,14 @@ class FSMStore:
         file_path: str,
         reasoning_version: str,
         reasoned_hash: Optional[str] = None,
+        reasoned_body_hash: Optional[str] = None,
     ) -> None:
         """
         Transition READY_FOR_REASONING → REASONED after a successful LLM pass.
 
-        *reasoned_hash* should be sha256(file content AFTER reason_file() writes
-        back to disk).  It becomes the baseline for detecting future meaningful
-        changes: if the file hash at the next stabilisation matches this value,
-        no re-indexing or re-reasoning is necessary.
+        *reasoned_hash* is sha256(full file AFTER reason_file() writes back).
+        *reasoned_body_hash* is sha256(_extract_body() AFTER write-back) — used
+        by the significance gate to ignore minor edits that don't change real content.
         """
         rec = self.get(file_path)
         if rec is None:
@@ -428,14 +437,15 @@ class FSMStore:
         conn.execute(
             """
             UPDATE document_states
-               SET current_state     = ?,
-                   last_reason_time  = ?,
-                   reasoning_version = ?,
-                   last_reasoned_hash = ?
+               SET current_state          = ?,
+                   last_reason_time       = ?,
+                   reasoning_version      = ?,
+                   last_reasoned_hash     = ?,
+                   last_reasoned_body_hash = ?
              WHERE file_path = ?
             """,
             (DocState.REASONED.value, time.time(), reasoning_version,
-             reasoned_hash, file_path),
+             reasoned_hash, reasoned_body_hash, file_path),
         )
         conn.commit()
         logger.debug("FSM → REASONED  (%s)", Path(file_path).name)
@@ -511,3 +521,42 @@ class FSMStore:
             (edit_time, file_path),
         )
         conn.commit()
+
+    # ── Body-content helpers ──────────────────────────────────────────────
+
+    @staticmethod
+    def _extract_body(file_path: str) -> str:
+        """
+        Return the document body with:
+          1. YAML frontmatter (---…---) stripped.
+          2. The '## Related Notes' section (and everything below it) stripped.
+
+        This ensures the body hash is immune to reasoning write-backs:
+        changing tags in frontmatter or adding backlinks will NOT change the
+        body hash, so those writes never trigger a new reasoning cycle.
+        """
+        text = Path(file_path).read_text(encoding="utf-8", errors="ignore")
+
+        # Strip YAML frontmatter
+        if text.startswith("---"):
+            end = text.find("---", 3)
+            if end != -1:
+                text = text[end + 3:].lstrip()
+
+        # Strip '## Related Notes' section (and everything after it)
+        # Matches the heading regardless of trailing whitespace
+        text = re.split(r"^##\s+Related Notes\s*$", text, maxsplit=1, flags=re.MULTILINE)[0]
+
+        return text.strip()
+
+    def compute_body_hash(self, file_path: str) -> Optional[str]:
+        """
+        Compute SHA-256 of the stripped body (no frontmatter, no backlinks section).
+        Returns None if the file does not exist.
+        Does NOT require STABILIZING state — safe to call from any scheduler.
+        """
+        path = Path(file_path)
+        if not path.exists():
+            return None
+        body = self._extract_body(file_path)
+        return hashlib.sha256(body.encode("utf-8")).hexdigest()

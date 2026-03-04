@@ -47,6 +47,12 @@ DOCUMENT TITLE: {title}
 DOCUMENT EXCERPT:
 {excerpt}
 
+EXISTING TAGS (already applied to this document — do not duplicate):
+{existing_tags_json}
+
+EXISTING PEOPLE (already linked to this document — do not duplicate):
+{existing_people_json}
+
 EXISTING TAG REGISTRY (tag → document count):
 {tag_registry_json}
 
@@ -80,6 +86,9 @@ A meaningful link exists when:
   • Both mention the same person or event in different contexts
 
 Do NOT link notes that only share common words or are superficially similar.
+Do NOT suggest a link to any note already listed in EXISTING BACKLINKS — those
+links are already present and must not be duplicated.
+If no new meaningful link exists beyond what is already linked, return an empty array.
 
 Reply ONLY with a JSON array — one object per candidate, in the same order.
 No commentary, no markdown fences.
@@ -89,6 +98,9 @@ BACKLINK_BATCH_USER = """\
 SOURCE NOTE:
 Title: {source_title}
 Excerpt: {source_excerpt}
+
+EXISTING BACKLINKS (already written — do not re-suggest these):
+{existing_backlinks}
 
 CANDIDATES:
 {candidates}

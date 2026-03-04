@@ -227,14 +227,19 @@ class ReasoningScheduler:
             # if the file is modified and later stabilises to this same hash,
             # the system will restore REASONED directly without re-running LLM.
             reasoned_hash: str | None = None
+            reasoned_body_hash: str | None = None
             if path.exists():
                 reasoned_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+                # Body hash strips frontmatter + ## Related Notes so that the
+                # system's own write-back never causes hash drift on the next cycle.
+                reasoned_body_hash = self._store.compute_body_hash(file_path)
 
             # Mark REASONED (internally validates action guards + FSM transition)
             self._store.mark_reasoned(
                 file_path,
                 reasoning_version=reasoning_version or "unknown",
                 reasoned_hash=reasoned_hash,
+                reasoned_body_hash=reasoned_body_hash,
             )
 
             logger.info("Reasoned successfully: %s", path.name)

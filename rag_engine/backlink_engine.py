@@ -51,6 +51,7 @@ class BacklinkEngine:
         source_file: str,
         chunks: List[Chunk],
         embeddings: "list[list[float]]",
+        existing_backlink_titles: List[str] | None = None,
     ) -> List[BacklinkDecision]:
         """
         Given the chunks + embeddings for source_file, query Chroma for similar
@@ -60,6 +61,7 @@ class BacklinkEngine:
         This reduces the LLM call count from O(TOP_K * chunks) to exactly 1.
         """
         source_title = Path(source_file).stem
+        existing_titles: List[str] = existing_backlink_titles or []
 
         # Step 1: collect best hit per target file across all chunks
         best_hits: Dict[str, dict] = {}   # target_file → hit dict
@@ -75,6 +77,14 @@ class BacklinkEngine:
                 if existing is None or hit["similarity"] > existing["similarity"]:
                     best_hits[target_file] = hit
 
+        # Filter out candidates already linked
+        if existing_titles:
+            existing_lower = {t.lower() for t in existing_titles}
+            best_hits = {
+                f: h for f, h in best_hits.items()
+                if Path(f).stem.lower() not in existing_lower
+            }
+
         if not best_hits:
             return []
 
@@ -85,6 +95,7 @@ class BacklinkEngine:
             source_file=source_file,
             source_excerpt=source_excerpt,
             hits=list(best_hits.values()),
+            existing_backlink_titles=existing_titles,
         )
 
     # ── Internal ─────────────────────────────────────────────────────────
@@ -95,11 +106,14 @@ class BacklinkEngine:
         source_file: str,
         source_excerpt: str,
         hits: List[dict],
+        existing_backlink_titles: List[str] | None = None,
     ) -> List[BacklinkDecision]:
         """
         Single LLM call that judges all candidate hits at once.
         Returns BacklinkDecision objects for candidates where should_link=true.
         """
+        existing_titles = existing_backlink_titles or []
+
         # Build a numbered candidate block for the prompt
         candidates_text = ""
         for i, hit in enumerate(hits):
@@ -111,9 +125,16 @@ class BacklinkEngine:
                 f"    similarity: {hit['similarity']:.3f}\n"
             )
 
+        # Format existing backlinks for the prompt
+        existing_backlinks_text = (
+            "\n".join(f"- [[{t}]]" for t in existing_titles)
+            if existing_titles else "(none)"
+        )
+
         user_prompt = BACKLINK_BATCH_USER.format(
             source_title=source_title,
             source_excerpt=source_excerpt,
+            existing_backlinks=existing_backlinks_text,
             candidates=candidates_text,
         )
 

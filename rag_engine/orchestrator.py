@@ -202,11 +202,19 @@ class RAGOrchestrator:
 
         combined_text = "\n\n".join(c.text for c in chunks)[:1500]
 
+        # Read existing frontmatter state so the LLM can preserve it
+        editor = MarkdownEditor(file_path)
+        existing_tags    = editor.read_frontmatter_list("tags")
+        existing_people  = editor.read_frontmatter_list("entities")
+        existing_backlinks = editor.read_existing_backlink_titles()
+
         # 1. Entity extraction + tag assignment — one merged LLM call
         entities, tags = self._extract_entities_and_tags(
             title=path.stem,
             text=combined_text,
             file_path=file_path,
+            existing_tags=existing_tags,
+            existing_people=existing_people,
         )
 
         # 2. Re-embed chunks for backlink similarity queries
@@ -219,10 +227,10 @@ class RAGOrchestrator:
             source_file=file_path,
             chunks=chunks,
             embeddings=embeddings,
+            existing_backlink_titles=existing_backlinks,
         )
 
         # 4. Write back to markdown
-        editor = MarkdownEditor(file_path)
         fm_changed = editor.update_frontmatter(tags=tags, entities=entities)
         bl_changed = editor.inject_backlinks(decisions)
 
@@ -301,13 +309,18 @@ class RAGOrchestrator:
         title: str,
         text: str,
         file_path: str,
+        existing_tags: list | None = None,
+        existing_people: list | None = None,
     ) -> tuple:
         """
         Single LLM call that returns both entities and tags.
         Replaces the former two-call _extract_entities() + _assign_tags() pattern.
         Returns (entity_canonicals: List[str], tags: List[str]).
+
+        *existing_tags* and *existing_people* are passed to the prompt so the
+        LLM can preserve them rather than regenerating from scratch.
         """
-        tag_registry_json  = json.dumps(self._tags.all_tags, indent=2)
+        tag_registry_json    = json.dumps(self._tags.all_tags, indent=2)
         entity_registry_json = self._entities.registry_json()
 
         result = self._llm.call_json(
@@ -315,6 +328,8 @@ class RAGOrchestrator:
             ENTITY_AND_TAG_USER.format(
                 title=title,
                 excerpt=text[:1200],
+                existing_tags_json=json.dumps(existing_tags or []),
+                existing_people_json=json.dumps(existing_people or []),
                 tag_registry_json=tag_registry_json,
                 entity_registry_json=entity_registry_json,
             ),

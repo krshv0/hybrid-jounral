@@ -30,7 +30,7 @@ class Config:
     """Application configuration"""
     
     # Paths
-    VAULT_DIR = Path("/Users/krishiv/Downloads/Stuff/journal_vault")
+    VAULT_DIR = Path("/Volumes/Vault/Encrypted Vault/journal_vault")
     ATTACHMENTS_DIR = VAULT_DIR / "attachments"
     PROCESSED_DIR = VAULT_DIR / "entries"
     
@@ -162,9 +162,9 @@ class MultimodalExtractor:
         Returns:
             {
                 'text': 'full transcription',
-                'tags': ['tag1', 'tag2', ...],
+                'summary': '3-5 sentence synthesis',
                 'title': 'Short Title',
-                'page_notes': '...'
+                'written_date': 'date as written in document, or null'
             }
         """
 
@@ -179,15 +179,22 @@ YOUR TASK:
    - Resolve ambiguous handwriting (pick the most contextually plausible word).
    - Infer paragraph breaks or list structure where the layout makes it clear.
    - Add light markdown formatting (blank lines between paragraphs, `- ` for bullet lists) to aid readability, but only where the original layout clearly implies it.
-3. Generate 3–6 concise, lowercase tags that reflect the main themes, emotions or topics of the entry.
+3. EXTRACT the date the document was written, if one is explicitly present anywhere in the image (e.g. a header, footer, signature, stamp, or body text).
+   - Return it exactly as written (e.g. "March 4", "04/03/26", "4th March 2026").
+   - If no date is present or you cannot confidently read one, return null.
+   - NEVER use today's date or invent a date.
 4. Generate a short title (2–4 words) that captures the essence of the entry. This will be used as the file name — make it specific, not generic.
+   - If a written date was found, incorporate it naturally into the title (e.g. "Mar 4 Morning Reflection").
+   - If no written date was found, do not include any date in the title.
 5. Write a 3–5 sentence AI summary of the entry's key ideas and emotional tone. This is a synthesis, not a transcription — write it in third person.
+
+Tags will be assigned automatically by a separate pipeline — do NOT generate tags.
 
 RESPOND ONLY WITH VALID JSON IN THIS EXACT FORMAT (no markdown fences):
 {
     "text": "full transcription here",
     "summary": "3-5 sentence synthesis of the entry here",
-    "tags": ["tag1", "tag2", "tag3"],
+    "written_date": "date as written in document, or null if absent",
     "title": "Short Specific Title"
 }"""
         
@@ -215,7 +222,7 @@ RESPOND ONLY WITH VALID JSON IN THIS EXACT FORMAT (no markdown fences):
             extracted_data = {
                 "text": raw,
                 "summary": "",
-                "tags": ["journal"],
+                "written_date": None,
                 "title": "Untitled Entry",
             }
 
@@ -249,8 +256,8 @@ class MarkdownBuilder:
 
         text = extracted_data.get('text', '')
         summary = extracted_data.get('summary', '')
-        tags = extracted_data.get('tags', ['journal'])
         title = extracted_data.get('title', 'Untitled Entry')
+        written_date = extracted_data.get('written_date') or None
 
         # Wrap transcribed text as blockquote
         blockquote = "\n".join(
@@ -258,8 +265,7 @@ class MarkdownBuilder:
             for line in text.splitlines()
         )
 
-        frontmatter = self._build_frontmatter(page_id, title, tags, source_filenames)
-        tags_line = " ".join(f"#{t.replace(' ', '-')}" for t in tags)
+        frontmatter = self._build_frontmatter(page_id, title, written_date, source_filenames)
         images_section = self._build_images_section(source_filenames)
         metadata_section = self._build_metadata_section(text)
         summary_section = f"## 🧠 AI Summary\n\n{summary}\n" if summary else ""
@@ -267,8 +273,6 @@ class MarkdownBuilder:
         markdown = f"""{frontmatter}
 
 # {title}
-
-{tags_line}
 
 ---
 
@@ -290,15 +294,16 @@ class MarkdownBuilder:
         return markdown
 
     @staticmethod
-    def _build_frontmatter(page_id: str, title: str, tags: List[str], source_filenames: List[str]) -> str:
-        """Build YAML frontmatter"""
-        date = datetime.now().isoformat()
+    def _build_frontmatter(page_id: str, title: str, written_date: Optional[str], source_filenames: List[str]) -> str:
+        """Build YAML frontmatter — tags intentionally omitted (assigned by RAG pipeline)"""
+        processed_date = datetime.now().isoformat()
         sources = ", ".join(f'"[[{f}]]"' for f in source_filenames)
+        written_date_line = f'\nwritten_date: "{written_date}"' if written_date else ""
         return f"""---
 id: {page_id}
 title: "{title}"
-date: {date}
-tags: {json.dumps(tags)}
+date: {processed_date}{written_date_line}
+tags: []
 source_pages: [{sources}]
 ---"""
 
@@ -365,11 +370,12 @@ class JournalToPipelineMarkdown:
         extracted_data = self.extractor.extract_multimodal(base64_images)
         print(f"     ✓ Text extracted ({len(extracted_data.get('text', '').split())} words)")
         print(f"     ✓ Title: {extracted_data.get('title', '?')}")
-        print(f"     ✓ Tags: {extracted_data.get('tags', [])}")
-
+        written_date = extracted_data.get('written_date')
+        print(f"     ✓ Written date: {written_date if written_date else '(not found in document)'}")
+        print(f"     ✓ Tags will be assigned by RAG pipeline")
         # STEP 3: Build markdown
         print("[3/4] Building structured markdown...")
-        page_id = self._generate_page_id(extracted_data.get('title', ''))
+        page_id = self._generate_page_id(extracted_data.get('title', ''), written_date)
 
         # Copy & rename source images into attachments folder
         import shutil
@@ -409,11 +415,18 @@ class JournalToPipelineMarkdown:
         }
 
     @staticmethod
-    def _generate_page_id(title: str) -> str:
-        """Generate filename: MMMDD - Title"""
-        date_str = datetime.now().strftime('%b%d').upper()   # e.g. FEB22
+    def _generate_page_id(title: str, written_date: Optional[str] = None) -> str:
+        """
+        Generate filename from title and optionally the written date.
+        If a written date was found in the document, it is used as a prefix.
+        If not, no date prefix is added — the processing date is never used.
+        """
         clean_title = title.strip() if title.strip() else 'Entry'
-        return f"{date_str} - {clean_title}"
+        if written_date:
+            # Sanitise the written date for use in a filename
+            safe_date = written_date.strip().replace('/', '-').replace(':', '-')
+            return f"{safe_date} - {clean_title}"
+        return clean_title
     
     @staticmethod
     def _save_to_vault(markdown_content: str, page_id: str) -> Path:
